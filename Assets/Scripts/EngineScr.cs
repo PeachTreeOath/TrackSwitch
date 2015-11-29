@@ -6,7 +6,7 @@ public class EngineScr : MonoBehaviour
 	public GameObject explosion;
 	public float accelRate = 0.1f;
 	public float speed = 2f;
-	private bool alive = true;
+	public bool alive;
 	private float rotationAngle;
 	private float currAngle;
 	private float accel = 0f;
@@ -30,8 +30,10 @@ public class EngineScr : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		if (accel < speed) {
-			accel += accelRate;
+		if (alive) {
+			if (accel < speed) {
+				accel += accelRate;
+			}
 		}
 	}
 
@@ -53,69 +55,71 @@ public class EngineScr : MonoBehaviour
 
 	void LateUpdate ()
 	{
-		if (currLane > destLane) {
-			switch (destLane) {
-			case 0:
-				if (transform.position.x <= -6) {
-					Blowup ();
+		if (alive) {
+			if (currLane > destLane) {
+				switch (destLane) {
+				case 0:
+					if (transform.position.x <= -6) {
+						Blowup ();
+					}
+					break;
+				case 1:
+					if (transform.position.x <= -4) {
+						transform.position = new Vector2 (-4, transform.position.y); 
+						Turn (2);
+					}
+					break;
+				case 2:
+					if (transform.position.x <= -2) {
+						transform.position = new Vector2 (-2, transform.position.y);
+						Turn (2);
+					}
+					break;
+				case 3:
+					if (transform.position.x <= 0) {
+						transform.position = new Vector2 (0, transform.position.y);
+						Turn (2);
+					}
+					break;
+				case 4:
+					if (transform.position.x <= 2) {
+						transform.position = new Vector2 (2, transform.position.y);
+						Turn (2);
+					}
+					break;
 				}
-				break;
-			case 1:
-				if (transform.position.x <= -4) {
-					transform.position = new Vector2 (-4, transform.position.y); 
-					Turn (2);
+			} else if (currLane < destLane) {
+				switch (destLane) {
+				case 2:
+					if (transform.position.x >= -2) {
+						transform.position = new Vector2 (-2, transform.position.y);
+						Turn (2);
+					}
+					break;
+				case 3:
+					if (transform.position.x >= 0) {
+						transform.position = new Vector2 (0, transform.position.y);
+						Turn (2);
+					}
+					break;
+				case 4:
+					if (transform.position.x >= 2) {
+						transform.position = new Vector2 (2, transform.position.y);
+						Turn (2);
+					}
+					break;
+				case 5:
+					if (transform.position.x >= 4) {
+						transform.position = new Vector2 (4, transform.position.y);
+						Turn (2);
+					}
+					break;
+				case 6:
+					if (transform.position.x >= 6) {
+						Blowup ();
+					}
+					break;
 				}
-				break;
-			case 2:
-				if (transform.position.x <= -2) {
-					transform.position = new Vector2 (-2, transform.position.y);
-					Turn (2);
-				}
-				break;
-			case 3:
-				if (transform.position.x <= 0) {
-					transform.position = new Vector2 (0, transform.position.y);
-					Turn (2);
-				}
-				break;
-			case 4:
-				if (transform.position.x <= 2) {
-					transform.position = new Vector2 (2, transform.position.y);
-					Turn (2);
-				}
-				break;
-			}
-		} else if (currLane < destLane) {
-			switch (destLane) {
-			case 2:
-				if (transform.position.x >= -2) {
-					transform.position = new Vector2 (-2, transform.position.y);
-					Turn (2);
-				}
-				break;
-			case 3:
-				if (transform.position.x >= 0) {
-					transform.position = new Vector2 (0, transform.position.y);
-					Turn (2);
-				}
-				break;
-			case 4:
-				if (transform.position.x >= 2) {
-					transform.position = new Vector2 (2, transform.position.y);
-					Turn (2);
-				}
-				break;
-			case 5:
-				if (transform.position.x >= 4) {
-					transform.position = new Vector2 (4, transform.position.y);
-					Turn (2);
-				}
-				break;
-			case 6:
-				if (transform.position.x >= 6) {
-					Blowup ();
-				}
-				break;
 			}
 		}
 	}
@@ -131,6 +135,9 @@ public class EngineScr : MonoBehaviour
 		} else if (collider.gameObject.tag == "Obstacle") {
 			Blowup ();
 		}
+		else if (collider.gameObject.tag == "Terminal") {
+			Victory ();
+		}
 	}
 
 	// 1 = left
@@ -143,16 +150,19 @@ public class EngineScr : MonoBehaviour
 			transform.rotation = Quaternion.Euler (Vector3.forward * rotationAngle);
 			currAngle = rotationAngle * Mathf.Deg2Rad;
 			destLane = currLane - 1;
+			gameMgr.freezeTracks = true;
 			break;
 		case 2:
 			transform.rotation = Quaternion.Euler (Vector3.up);
 			currAngle = 0f;
 			currLane = destLane;
+			gameMgr.freezeTracks = false;
 			break;
 		case 3:
 			transform.rotation = Quaternion.Euler (Vector3.forward * -rotationAngle);
 			currAngle = -rotationAngle * Mathf.Deg2Rad;
 			destLane = currLane + 1;
+			gameMgr.freezeTracks = true;
 			break;
 		}
 	}
@@ -161,6 +171,35 @@ public class EngineScr : MonoBehaviour
 	{
 		alive = false;
 		body.velocity = new Vector2 (0, 0);
+		gameMgr.freezeTracks = true;
 		Instantiate (explosion, transform.position, Quaternion.Euler (Vector3.forward));
+
+		Invoke ("GameOver", 1.5f);
+	}
+
+	private void GameOver()
+	{
+		Application.LoadLevel ("GameOver");
+	}
+
+	private void Victory()
+	{
+		alive = false;
+		body.velocity = new Vector2 (0, 0);
+		gameMgr.freezeTracks = true;
+		gameMgr.LaunchHeart ();
+
+		Invoke ("NextLevel", 1.5f);
+	}
+
+	private void NextLevel()
+	{
+		GameObject obj = GameObject.Find ("GlobalMgr");
+		if (obj != null) {
+			GlobalMgrScr gm = obj.GetComponent<GlobalMgrScr> ();
+			gm.stage++;
+		}
+
+		Application.LoadLevel ("StageIntro");
 	}
 }

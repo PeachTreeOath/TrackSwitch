@@ -3,30 +3,41 @@ using System.Collections;
 
 public class GameMgrScr : MonoBehaviour
 {
-
 	public GameObject track;
 	public GameObject trackSwitch;
 	public GameObject engine;
 	public GameObject bg;
 	public GameObject obs1;
+	public GameObject terminal;
+	public GameObject heart;
 	public float rotationAngle = 28f;
 	public float rotationOffset = 3f;
-	public int mapSize = 3;
+	public int mapSize = 2;
 	public bool leftSwitchState = true;
 	public bool includeBG = false;
+	public bool freezeTracks = false;
 	// 0 = empty
 	// 1 = obstacle
 	// 2 = switch
 	private int[,] objMap;
+	private Vector3 terminalPos;
+	private CamScr cam;
+	private EngineScr train;
 
 	// Use this for initialization
 	void Start ()
 	{
+		cam = GameObject.Find ("Main Camera").GetComponent<CamScr> ();
+		GameObject engineObj = (GameObject)Instantiate (engine, new Vector3 (0f, -2.5f, 0f), Quaternion.identity);
+		train = engineObj.GetComponent<EngineScr> ();
+		
+		SetStageVars ();
+
 		GenerateBG ();
 		GenerateObjMap ();
-
-		GameObject engineObj = (GameObject)Instantiate (engine, new Vector3 (0f, -2.5f, 0f), Quaternion.identity);
-
+		PlaceTerminal ();
+		cam.PanCam (terminalPos);
+		
 		GameObject[] switches = GameObject.FindGameObjectsWithTag ("Switch");
 		foreach (GameObject switchObj in switches) {
 			switchObj.transform.Rotate (Vector3.forward * rotationAngle);
@@ -37,11 +48,27 @@ public class GameMgrScr : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		if (Input.GetMouseButtonDown (0)) {
-			SwitchTracks ();
+		if (!freezeTracks) {
+			if (Input.GetMouseButtonDown (0)) {
+				SwitchTracks ();
+			}
 		}
 	}
-	
+
+	private void SetStageVars ()
+	{
+		int stage = 1;
+		GameObject obj = GameObject.Find ("GlobalMgr");
+		if (obj != null) {
+			GlobalMgrScr gm = obj.GetComponent<GlobalMgrScr> ();
+			stage = gm.stage;
+		}
+
+		mapSize += stage;
+		cam.panSpeed = 0.05f + stage * 0.01f;
+		train.speed = 2f + stage * 1f;
+	}
+
 	private void GenerateBG ()
 	{
 		GameObject bgParent = GameObject.Find ("BGs");
@@ -49,7 +76,7 @@ public class GameMgrScr : MonoBehaviour
 		float newY = -7.5f;
 
 		//2 bg buffer on bottom of map
-		for (int i = 0; i < mapSize+2; i++) {
+		for (int i = 0; i < mapSize+5; i++) {
 			//Build BG
 			if (includeBG) {
 				float bgX = -10.2f;
@@ -77,21 +104,58 @@ public class GameMgrScr : MonoBehaviour
 	private void GenerateObjMap ()
 	{
 		objMap = new int[mapSize, 5];
+		GenerateSwitch (0, 2);
+		objMap [0, 2] = 2;
 		for (int row = 0; row < mapSize; row++) {
 			int track;
 
 			// Create i# of switches
-			for (int i = 0; i < 2; i++) {
+			int roll = Random.Range (0, 100);
+			int numSwitches = 0;
+			if(roll < 25)
+			{
+				numSwitches = 1;
+			}
+			else if(roll < 60)
+			{
+				numSwitches = 2;
+			}
+			else if(roll < 85)
+			{
+				numSwitches = 3;
+			}
+
+			for (int i = 0; i < numSwitches; i++) {
 				track = FindOpenTrack (row);
+				if(track == -1) break;
 				objMap [row, track] = 2;
 				GenerateSwitch (row, track);
 			}
 
+			roll = Random.Range (0, 100);
+			int numObstacles = 0;
+			if(roll < 15)
+			{
+				numObstacles = 1;
+			}
+			else if(roll < 50)
+			{
+				numObstacles = 2;
+			}
+			else if(roll < 75)
+			{
+				numObstacles = 3;
+			}
+			else 
+			{
+				numObstacles = 4;
+			}
 			// Create i# of obstacles
-			for (int i = 0; i < 2; i++) {
+			for (int i = 0; i < numObstacles; i++) {
 				// Allow 3 retries for placement
 				for (int j = 0; j < 2; j++) {
 					track = FindOpenTrack (row);
+					if(track == -1) break;
 					objMap [row, track] = 1;
 					if (IsMapCompletable (0, 2)) {
 						GenerateObstacle (row, track);
@@ -106,7 +170,7 @@ public class GameMgrScr : MonoBehaviour
 
 	private int FindOpenTrack (int row)
 	{
-		while (true) {
+		for (int i = 0; i < 5; i++) {
 			int track = Random.Range (0, 5);
 			if (objMap [row, track] != 0) {
 				continue;
@@ -114,6 +178,15 @@ public class GameMgrScr : MonoBehaviour
 				return track;
 			}
 		}
+		return -1;
+	}
+
+	private void PlaceTerminal ()
+	{
+		float y = 7.5f * mapSize + 4;
+		Vector3 pos = new Vector3 (0, y, 0);
+		terminalPos = pos;
+		GameObject.Instantiate (terminal, pos, Quaternion.identity);
 	}
 
 	private void GenerateObstacle (int row, int track)
@@ -175,5 +248,10 @@ public class GameMgrScr : MonoBehaviour
 		} else {
 			return IsMapCompletable (row + 1, track);
 		}
+	}
+
+	public void LaunchHeart ()
+	{
+		GameObject.Instantiate (heart, terminalPos, Quaternion.identity);
 	}
 }
