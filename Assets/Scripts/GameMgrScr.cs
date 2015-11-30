@@ -12,7 +12,7 @@ public class GameMgrScr : MonoBehaviour
 	public GameObject heart;
 	public float rotationAngle = 28f;
 	public float rotationOffset = 3f;
-	public int mapSize = 2;
+	public int mapSize = 3;
 	public bool leftSwitchState = true;
 	public bool includeBG = false;
 	public bool freezeTracks = false;
@@ -65,8 +65,8 @@ public class GameMgrScr : MonoBehaviour
 		}
 
 		mapSize += stage;
-		cam.panSpeed = 0.05f + stage * 0.01f;
-		train.speed = 2f + stage * 1f;
+		cam.panSpeed = 0.05f + stage * 0.005f;
+		train.speed = 2f + stage * 0.5f;
 	}
 
 	private void GenerateBG ()
@@ -120,7 +120,7 @@ public class GameMgrScr : MonoBehaviour
 			{
 				numSwitches = 2;
 			}
-			else if(roll < 85)
+			else if(roll < 80)
 			{
 				numSwitches = 3;
 			}
@@ -134,19 +134,19 @@ public class GameMgrScr : MonoBehaviour
 
 			roll = Random.Range (0, 100);
 			int numObstacles = 0;
-			if(roll < 15)
+			if(roll < 25)
 			{
 				numObstacles = 1;
 			}
-			else if(roll < 50)
+			else if(roll < 65)
 			{
 				numObstacles = 2;
 			}
-			else if(roll < 75)
+			else if(roll < 85)
 			{
 				numObstacles = 3;
 			}
-			else 
+			else if(roll < 98)
 			{
 				numObstacles = 4;
 			}
