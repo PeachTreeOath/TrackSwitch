@@ -8,6 +8,9 @@ public class GameMgrScr : MonoBehaviour
 	public GameObject engine;
 	public GameObject bg;
 	public GameObject obs1;
+	public GameObject obs2;
+	public GameObject obs3;
+	public GameObject obs4;
 	public GameObject terminal;
 	public GameObject heart;
 	public float rotationAngle = 28f;
@@ -195,7 +198,23 @@ public class GameMgrScr : MonoBehaviour
 		float newX = -4f + 2 * track;
 		float newY = 7.5f * row + 4f;
 		Vector3 pos = new Vector3 (newX, newY, 0);
-		GameObject obj = (GameObject)GameObject.Instantiate (obs1, pos, Quaternion.identity);
+		int obsChoice = Random.Range (0,4);
+		GameObject obs = obs1;
+		switch (obsChoice) {
+		case 0:
+			obs = obs1;
+			break;
+		case 1:
+			obs = obs2;
+			break;
+		case 2:
+			obs = obs3;
+			break;
+		case 3:
+			obs = obs4;
+			break;
+		}
+		GameObject obj = (GameObject)GameObject.Instantiate (obs, pos, Quaternion.identity);
 		obj.transform.parent = obstacleParent.transform;
 	}
 
